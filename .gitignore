@@ -1,0 +1,26 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+data/
+uploads/
+node_modules/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.db
+frontend/package-lock.json
+.DS_Store
+
+# Local and data directories
+Sample DATA/*.docx
+backend/scratch/
+
+# Project prompt
+permission_aware_rag_agent_prompt.md
+
+# IDE and OS files
+.vscode/
+.idea/
+Thumbs.db
