@@ -5,6 +5,9 @@ from sqlalchemy.orm import Session
 
 import secrets
 from datetime import UTC, datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
 
 from app.audit.service import AuditService
 from app.auth.service import (
@@ -75,7 +78,8 @@ def send_admin_otp(payload: SendOtpRequest, db: Session = Depends(get_db)):
     try:
         email_service.send_otp_email(email, otp_code)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to send email: {exc}") from exc
+        logger.error("email_send_failed", email=email, error=str(exc))
+        raise HTTPException(status_code=500, detail="Failed to send verification email. Please try again later.") from exc
 
     return {"ok": True, "message": "Verification code sent to your email"}
 
@@ -119,7 +123,8 @@ def delete_account_send_otp(user=Depends(get_current_user), db: Session = Depend
     try:
         email_service.send_otp_email(email, otp_code)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to send email: {exc}") from exc
+        logger.error("email_send_failed", email=user.email, error=str(exc))
+        raise HTTPException(status_code=500, detail="Failed to send verification email. Please try again later.") from exc
 
     return {"ok": True, "message": "Deletion verification code sent to your email"}
 
@@ -295,7 +300,8 @@ def forgot_password_send_otp(payload: SendOtpRequest, db: Session = Depends(get_
     try:
         email_service.send_otp_email(email, otp_code)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to send email: {exc}") from exc
+        logger.error("email_send_failed", email=payload.email, error=str(exc))
+        raise HTTPException(status_code=500, detail="Failed to send verification email. Please try again later.") from exc
 
     return {"ok": True, "message": "Verification code sent to your email"}
 

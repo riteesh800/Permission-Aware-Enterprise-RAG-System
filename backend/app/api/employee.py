@@ -49,7 +49,12 @@ def download_document(document_id: str, request: Request, user=Depends(get_curre
         raise HTTPException(status_code=403, detail="Access denied")
         
     settings = get_settings()
-    full_path = Path(settings.storage_path) / doc.storage_path
+    storage_root = Path(settings.storage_path).resolve()
+    full_path = (storage_root / doc.storage_path).resolve()
+
+    # Prevent path traversal — resolved path must stay inside storage root
+    if not str(full_path).startswith(str(storage_root)):
+        raise HTTPException(status_code=403, detail="Access denied")
 
     if not full_path.exists():
         raise HTTPException(status_code=404, detail="Document file missing from storage")

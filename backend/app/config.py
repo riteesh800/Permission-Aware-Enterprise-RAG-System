@@ -1,5 +1,8 @@
+import logging
 from functools import lru_cache
 from typing import Literal
+
+logger = logging.getLogger(__name__)
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -83,4 +86,8 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    settings = Settings()
+    if settings.environment != "test":
+        if "change-me" in settings.jwt_secret or "change-me" in settings.session_secret:
+            logger.warning("SECURITY WARNING: Default 'change-me' secrets are being used in a non-test environment. Please update JWT_SECRET and SESSION_SECRET.")
+    return settings

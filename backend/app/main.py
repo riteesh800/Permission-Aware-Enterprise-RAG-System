@@ -89,8 +89,8 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(_request: Request, exc: HTTPException):
-        logger.error(f"HTTPException: status={exc.status_code}, detail={exc.detail}")
-        if exc.status_code == 403:
+        logger.error("http_exception", status_code=exc.status_code, detail=str(exc.detail))
+        if exc.status_code == 403 and settings.debug:
             import traceback
             traceback.print_stack()
         message = exc.detail if isinstance(exc.detail, str) else "Unable to process request"
