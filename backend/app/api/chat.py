@@ -29,6 +29,7 @@ def chat(
     result = ChatService(db).ask(user, payload.query, payload.conversation_id)
     AuditService(db).record(
         actor_user_id=user.id,
+        tenant_id=user.tenant_id,
         action="chat",
         request_id=request.headers.get("X-Request-ID", "chat"),
         status="SUCCESS",

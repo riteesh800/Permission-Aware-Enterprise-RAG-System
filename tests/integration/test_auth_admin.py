@@ -27,6 +27,8 @@ def test_login_does_not_reveal_which_field(client):
 
 def test_admin_can_create_and_disable_user(client):
     headers = login(client, "ACME-000001")
+    org = client.get("/api/admin/org", headers=headers).json()
+    dept_id = org["departments"][0]["id"]
     created = client.post(
         "/api/admin/users",
         headers=headers,
@@ -35,6 +37,7 @@ def test_admin_can_create_and_disable_user(client):
             "full_name": "Erin New",
             "password": "TempPassw0rd!x",
             "app_role": "EMPLOYEE",
+            "department_id": dept_id,
         },
     )
     assert created.status_code == 200
@@ -63,14 +66,14 @@ def test_admin_registration_with_otp_flow(client, app):
     # Test short password rejection
     short_pw = client.post(
         "/api/auth/register-admin/verify",
-        json={"full_name": "New Admin", "email": email, "password": "Short1!", "otp": "123456"},
+        json={"full_name": "New Admin", "company_name": "New Corp", "email": email, "password": "Short1!", "otp": "123456"},
     )
     assert short_pw.status_code == 400
 
     # Test wrong OTP rejection
     wrong_otp = client.post(
         "/api/auth/register-admin/verify",
-        json={"full_name": "New Admin", "email": email, "password": "StrongPassword1!", "otp": "000000"},
+        json={"full_name": "New Admin", "company_name": "New Corp", "email": email, "password": "StrongPassword1!", "otp": "000000"},
     )
     assert wrong_otp.status_code == 400
 
@@ -85,7 +88,7 @@ def test_admin_registration_with_otp_flow(client, app):
 
     verify_res = client.post(
         "/api/auth/register-admin/verify",
-        json={"full_name": "New Admin", "email": email, "password": "StrongPassword1!", "otp": "654321"},
+        json={"full_name": "New Admin", "company_name": "New Corp", "email": email, "password": "StrongPassword1!", "otp": "654321"},
     )
     assert verify_res.status_code == 200
     user_data = verify_res.json()["user"]

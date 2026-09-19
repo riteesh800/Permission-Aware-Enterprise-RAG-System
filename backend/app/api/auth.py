@@ -402,6 +402,7 @@ def forgot_password_reset(
 
     AuditService(db).record(
         actor_user_id=existing.id,
+        tenant_id=existing.tenant_id,
         action="reset_password",
         request_id=request.headers.get("X-Request-ID", "reset"),
         status=AuditStatus.SUCCESS.value,
@@ -423,6 +424,7 @@ def login(payload: LoginRequest, request: Request, response: Response, db: Sessi
     auth_user = auth.to_auth_user(user)
     AuditService(db).record(
         actor_user_id=user.id,
+        tenant_id=user.tenant_id,
         action="login",
         request_id=request.headers.get("X-Request-ID", "login"),
         status=AuditStatus.SUCCESS.value,

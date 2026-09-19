@@ -4,7 +4,7 @@ from app.security.crypto import hash_token
 import io
 
 
-def _register_admin(client, email, name, password="StrongPassword1!"):
+def _register_admin(client, email, name, company_name="Test Company", password="StrongPassword1!"):
     from app import database as dbmod
     client.post("/api/auth/register-admin/send-otp", json={"email": email})
     db = dbmod.SessionLocal()
@@ -15,7 +15,7 @@ def _register_admin(client, email, name, password="StrongPassword1!"):
 
     res = client.post(
         "/api/auth/register-admin/verify",
-        json={"full_name": name, "email": email, "password": password, "otp": "999999"},
+        json={"full_name": name, "company_name": company_name, "email": email, "password": password, "otp": "999999"},
     )
     assert res.status_code == 200, res.text
     csrf = client.cookies.get("csrf_token")
@@ -24,7 +24,16 @@ def _register_admin(client, email, name, password="StrongPassword1!"):
 
 def test_multi_tenant_admin_and_worker_isolation(client):
     # Register Admin A
-    headers_a = _register_admin(client, "admin_a@acme.com", "Admin Alpha")
+    headers_a = _register_admin(client, "admin_a@acme.com", "Admin Alpha", company_name="Alpha Corp")
+
+    # Create a department for Admin A
+    dept_a = client.post(
+        "/api/admin/org/departments",
+        headers=headers_a,
+        json={"name": "Engineering", "description": "Engineering dept"},
+    )
+    assert dept_a.status_code == 200, dept_a.text
+    dept_a_id = dept_a.json()["id"]
 
     # Create Worker A under Admin A
     create_a = client.post(
@@ -35,6 +44,7 @@ def test_multi_tenant_admin_and_worker_isolation(client):
             "full_name": "Worker Alpha",
             "password": "WorkerPassw0rd!1",
             "app_role": "EMPLOYEE",
+            "department_id": dept_a_id,
         },
     )
     assert create_a.status_code == 200, create_a.text
@@ -43,7 +53,16 @@ def test_multi_tenant_admin_and_worker_isolation(client):
     from starlette.testclient import TestClient
     from app.main import app
     client_b = TestClient(app)
-    headers_b = _register_admin(client_b, "admin_b@globex.com", "Admin Beta")
+    headers_b = _register_admin(client_b, "admin_b@globex.com", "Admin Beta", company_name="Beta Corp")
+
+    # Create a department for Admin B
+    dept_b = client_b.post(
+        "/api/admin/org/departments",
+        headers=headers_b,
+        json={"name": "Engineering", "description": "Engineering dept"},
+    )
+    assert dept_b.status_code == 200, dept_b.text
+    dept_b_id = dept_b.json()["id"]
 
     # Create Worker B under Admin B
     create_b = client_b.post(
@@ -54,6 +73,7 @@ def test_multi_tenant_admin_and_worker_isolation(client):
             "full_name": "Worker Beta",
             "password": "WorkerPassw0rd!2",
             "app_role": "EMPLOYEE",
+            "department_id": dept_b_id,
         },
     )
     assert create_b.status_code == 200, create_b.text
@@ -89,12 +109,29 @@ def test_multi_tenant_document_and_rag_isolation(client):
 
     # 1. Register Admin X (Company X) & Admin Y (Company Y)
     client_x = TestClient(app)
-    headers_x = _register_admin(client_x, "admin_x@comp-x.com", "Admin X")
+    headers_x = _register_admin(client_x, "admin_x@comp-x.com", "Admin X", company_name="Company X")
 
     client_y = TestClient(app)
-    headers_y = _register_admin(client_y, "admin_y@comp-y.com", "Admin Y")
+    headers_y = _register_admin(client_y, "admin_y@comp-y.com", "Admin Y", company_name="Company Y")
 
-    # 2. Create Workers in each company
+    # 2. Create Departments in each company
+    dept_x = client_x.post(
+        "/api/admin/org/departments",
+        headers=headers_x,
+        json={"name": "Operations", "description": "Ops"},
+    )
+    assert dept_x.status_code == 200, dept_x.text
+    dept_x_id = dept_x.json()["id"]
+
+    dept_y = client_y.post(
+        "/api/admin/org/departments",
+        headers=headers_y,
+        json={"name": "Operations", "description": "Ops"},
+    )
+    assert dept_y.status_code == 200, dept_y.text
+    dept_y_id = dept_y.json()["id"]
+
+    # 3. Create Workers in each company
     res_wx = client_x.post(
         "/api/admin/users",
         headers=headers_x,
@@ -104,6 +141,7 @@ def test_multi_tenant_document_and_rag_isolation(client):
             "password": "WorkerPassw0rd!X",
             "app_role": "EMPLOYEE",
             "must_change_password": False,
+            "department_id": dept_x_id,
         },
     )
     assert res_wx.status_code == 200, res_wx.text
@@ -117,6 +155,7 @@ def test_multi_tenant_document_and_rag_isolation(client):
             "password": "WorkerPassw0rd!Y",
             "app_role": "EMPLOYEE",
             "must_change_password": False,
+            "department_id": dept_y_id,
         },
     )
     assert res_wy.status_code == 200, res_wy.text
@@ -174,7 +213,7 @@ def test_multi_tenant_document_and_rag_isolation(client):
     worker_x_client = TestClient(app)
     login_x = worker_x_client.post(
         "/api/auth/login",
-        json={"identifier": "worker_x@comp-x.com", "password": "WorkerPassw0rd!X"},
+        json={"identifier": "worker_x@comp-x.com", "password": "WorkerPassw0rd!X", "company_name": "Company X"},
     )
     assert login_x.status_code == 200, login_x.text
     headers_wx = {"X-CSRF-Token": worker_x_client.cookies.get("csrf_token")}
@@ -204,7 +243,7 @@ def test_multi_tenant_document_and_rag_isolation(client):
     worker_y_client = TestClient(app)
     login_y = worker_y_client.post(
         "/api/auth/login",
-        json={"identifier": "worker_y@comp-y.com", "password": "WorkerPassw0rd!Y"},
+        json={"identifier": "worker_y@comp-y.com", "password": "WorkerPassw0rd!Y", "company_name": "Company Y"},
     )
     assert login_y.status_code == 200, login_y.text
     headers_wy = {"X-CSRF-Token": worker_y_client.cookies.get("csrf_token")}

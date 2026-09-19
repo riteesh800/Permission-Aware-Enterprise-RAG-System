@@ -85,11 +85,14 @@ class UserService:
 
         auth_user = AuthenticationService(self.db).to_auth_user(user)
         authz = AuthorizationService(self.db)
-        docs = (
-            self.db.query(Document)
-            .filter(Document.ingestion_status == IngestionStatus.COMPLETED.value)
-            .all()
+        query = self.db.query(Document).filter(
+            Document.ingestion_status == IngestionStatus.COMPLETED.value
         )
+        if user.tenant_id:
+            query = query.filter(
+                (Document.tenant_id == user.tenant_id) | (Document.tenant_id.is_(None))
+            )
+        docs = query.all()
         readable = [d.title for d in docs if authz.can_read_document(auth_user, d)]
         return {
             "department_id": user.department_id,

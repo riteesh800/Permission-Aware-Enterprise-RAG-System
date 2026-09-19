@@ -19,10 +19,11 @@ class Tenant(Base):
 
 class Department(Base):
     __tablename__ = "departments"
+    __table_args__ = (UniqueConstraint("tenant_id", "name", name="uq_dept_tenant_name"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     tenant_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
-    name: Mapped[str] = mapped_column(String(120), unique=True)
+    name: Mapped[str] = mapped_column(String(120))
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -31,20 +32,22 @@ class Department(Base):
 
 class Role(Base):
     __tablename__ = "roles"
+    __table_args__ = (UniqueConstraint("tenant_id", "name", name="uq_role_tenant_name"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     tenant_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
-    name: Mapped[str] = mapped_column(String(120), unique=True)
+    name: Mapped[str] = mapped_column(String(120))
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class Group(Base):
     __tablename__ = "groups"
+    __table_args__ = (UniqueConstraint("tenant_id", "name", name="uq_group_tenant_name"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     tenant_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
-    name: Mapped[str] = mapped_column(String(120), unique=True)
+    name: Mapped[str] = mapped_column(String(120))
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

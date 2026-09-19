@@ -58,15 +58,22 @@ def client(app):
         yield test_client
 
 
-def login(client: TestClient, identifier: str, password: str = "DevPassw0rd!x") -> dict:
-    response = client.post("/api/auth/login", json={"identifier": identifier, "password": password})
+def login(client: TestClient, identifier: str, password: str = "DevPassw0rd!x", company_name: str | None = None) -> dict:
+    payload: dict = {"identifier": identifier, "password": password}
+    if company_name is not None:
+        payload["company_name"] = company_name
+    elif not identifier.upper().startswith("ACME-0000"):
+        # Employee logins require company_name; seed employees belong to ACME Corp
+        payload["company_name"] = "ACME Corp"
+    response = client.post("/api/auth/login", json=payload)
     assert response.status_code == 200, response.text
     csrf = client.cookies.get("csrf_token")
     assert csrf
     return {"X-CSRF-Token": csrf}
 
 
-def login_session(app, identifier: str, password: str = "DevPassw0rd!x") -> tuple[TestClient, dict]:
+def login_session(app, identifier: str, password: str = "DevPassw0rd!x", company_name: str | None = None) -> tuple[TestClient, dict]:
     isolated = TestClient(app)
-    headers = login(isolated, identifier, password)
+    headers = login(isolated, identifier, password, company_name)
     return isolated, headers
+
