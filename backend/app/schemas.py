@@ -48,6 +48,8 @@ class UserPublic(BaseModel):
     company_name: str | None = None
     role_names: list[str] = Field(default_factory=list)
     group_names: list[str] = Field(default_factory=list)
+    role_ids: list[str] = Field(default_factory=list)
+    group_ids: list[str] = Field(default_factory=list)
 
 
 class CreateUserRequest(BaseModel):
@@ -67,6 +69,8 @@ class PatchUserRequest(BaseModel):
     is_active: bool | None = None
     must_change_password: bool | None = None
     app_role: str | None = None
+    role_ids: list[str] | None = None
+    group_ids: list[str] | None = None
 
 
 class ResetPasswordRequest(BaseModel):

@@ -245,6 +245,8 @@ def verify_admin_registration(
             company_name=auth_user.company_name,
             role_names=auth_user.role_names,
             group_names=auth_user.group_names,
+            role_ids=auth_user.role_ids,
+            group_ids=auth_user.group_ids,
         ).model_dump()
     }
 
@@ -444,6 +446,8 @@ def login(payload: LoginRequest, request: Request, response: Response, db: Sessi
             company_name=auth_user.company_name,
             role_names=auth_user.role_names,
             group_names=auth_user.group_names,
+            role_ids=auth_user.role_ids,
+            group_ids=auth_user.group_ids,
         ).model_dump()
     }
 
@@ -476,6 +480,8 @@ def me(user=Depends(get_current_user)):
         company_name=user.company_name,
         role_names=user.role_names,
         group_names=user.group_names,
+        role_ids=user.role_ids,
+        group_ids=user.group_ids,
     ).model_dump()
 
 

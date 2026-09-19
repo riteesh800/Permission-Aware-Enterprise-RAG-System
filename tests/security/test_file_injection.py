@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from app.ingestion.files import MalwareScanner
 from app.ingestion.service import IngestionService
 from app.models.document import Document
-from app.models.enums import Classification, PrincipalType
+from app.models.enums import PrincipalType
 from app.retrieval.vector_store import tokenize
 from tests.conftest import login, login_session
 
@@ -107,7 +107,6 @@ def test_prompt_injection_in_pdf_and_docx_is_treated_as_data(app, client):
             document_type="pdf",
             owner_user_id=None,
             department_id=None,
-            classification=Classification.PUBLIC.value,
             acls=[{"principal_type": PrincipalType.PUBLIC.value, "permission": "READ"}],
         )
         docx_doc = service.store_and_ingest(
@@ -118,7 +117,6 @@ def test_prompt_injection_in_pdf_and_docx_is_treated_as_data(app, client):
             document_type="docx",
             owner_user_id=None,
             department_id=None,
-            classification=Classification.PUBLIC.value,
             acls=[{"principal_type": PrincipalType.PUBLIC.value, "permission": "READ"}],
         )
         assert db.get(Document, pdf_doc.id).is_searchable

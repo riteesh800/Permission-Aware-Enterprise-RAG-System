@@ -52,7 +52,7 @@ def hash_query(query: str) -> str:
 def hash_ip(ip: str | None, secret: str) -> str | None:
     if not ip:
         return None
-    return hmac.new(secret.encode("utf-8"), ip.encode("utf-8"), hashlib.sha256).hexdigest()
+    return hmac.HMAC(secret.encode("utf-8"), ip.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
 def create_access_token(settings: Settings, user_id: str, app_role: str, token_version: int) -> str:

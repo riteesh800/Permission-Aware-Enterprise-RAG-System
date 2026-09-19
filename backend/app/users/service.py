@@ -73,6 +73,16 @@ class UserService:
             user.must_change_password = data["must_change_password"]
         if "is_active" in data and data["is_active"] is not None:
             AuthenticationService(self.db).disable_user(user, data["is_active"])
+        if "role_ids" in data and data["role_ids"] is not None:
+            self.db.query(UserRole).filter(UserRole.user_id == user.id).delete()
+            for rid in data["role_ids"]:
+                self.db.add(UserRole(user_id=user.id, role_id=rid))
+            user.permission_version += 1
+        if "group_ids" in data and data["group_ids"] is not None:
+            self.db.query(UserGroup).filter(UserGroup.user_id == user.id).delete()
+            for gid in data["group_ids"]:
+                self.db.add(UserGroup(user_id=user.id, group_id=gid))
+            user.permission_version += 1
         self.db.commit()
         self.db.refresh(user)
         return user
